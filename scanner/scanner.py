@@ -6,6 +6,7 @@ from azure.mgmt.compute import ComputeManagementClient
 from ai_engine import analyze_all_findings
 import json, os
 from dotenv import load_dotenv
+from prometheus_client import CollectorRegistry, Gauge, push_to_gateway
 
 load_dotenv()
 SUBSCRIPTION_ID = os.getenv('AZURE_SUBSCRIPTION_ID')
@@ -85,6 +86,27 @@ def check_storage_https():
                 'resource_id': account.id
             })
 
+def push_metrics(findings):
+    registry = CollectorRegistry()
+    g_total = Gauge('cspm_total_findings',
+                    'Total security findings', registry=registry)
+    g_critical = Gauge('cspm_critical_findings',
+                       'Critical severity findings', registry=registry)
+    g_score = Gauge('cspm_security_score',
+                    'Security posture score 0-100', registry=registry)
+
+    total = len(findings)
+    critical = len([f for f in findings if f['severity'] == 'CRITICAL'])
+    score = max(0, 100 - (critical * 20) - (total * 5))
+
+    g_total.set(total)
+    g_critical.set(critical)
+    g_score.set(score)
+
+    push_to_gateway('localhost:9091', job='cspm_scanner',
+                    registry=registry)
+
+
 if __name__ == '__main__':
     print('Running security checks...')
     check_storage_public_access()
@@ -98,3 +120,25 @@ if __name__ == '__main__':
         json.dump(enriched, f, indent=2)
     print(json.dumps(enriched, indent=2))
     print(f'Done. Report saved to report.json')
+
+def push_metrics(findings):
+    from prometheus_client import CollectorRegistry, Gauge, push_to_gateway
+    registry = CollectorRegistry()
+    
+    g_total = Gauge('cspm_total_findings', 'Total findings', registry=registry)
+    g_critical = Gauge('cspm_critical_findings', 'Critical findings', registry=registry)
+    g_score = Gauge('cspm_security_score', 'Security score 0-100', registry=registry)
+
+    total = len(findings)
+    critical = len([f for f in findings if f['severity'] == 'CRITICAL'])
+    score = max(0, 100 - (critical * 20) - (total * 5))
+
+    g_total.set(total)
+    g_critical.set(critical)
+    g_score.set(score)
+
+    try:
+        push_to_gateway('localhost:9091', job='cspm_scanner', registry=registry)
+        print(f'Metrics pushed. Score: {score}')
+    except Exception as e:
+        print(f'Metrics push failed: {e}')
