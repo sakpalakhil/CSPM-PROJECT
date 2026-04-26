@@ -1,0 +1,47 @@
+name: CSPM Security Scan
+
+on:
+  push:
+    paths:
+      - 'terraform/**'
+  schedule:
+    - cron: '0 6 * * *'
+   workflow_dispatch:
+
+jobs:
+  security-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12.3'
+
+      - name: Install dependencies
+        run: pip install -r scanner/requirements.txt
+
+      - name: Run security scanner
+        env:
+          AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          GROK_API_KEY: ${{ secrets.GROK_API_KEY }}
+        run: python scanner/scanner.py
+
+      - name: Upload scan report
+        uses: actions/upload-artifact@v3
+        with:
+          name: security-report
+          path: scanner/report.json
+
+      - name: Fail if CRITICAL findings exist
+        run: |
+          python -c "
+          import json
+          with open('scanner/report.json') as f: data = json.load(f)
+          criticals = [x for x in data if x['severity']=='CRITICAL']
+          if criticals: exit(1)  # Fail the pipeline
+          "
