@@ -15,7 +15,7 @@ explanations and Terraform remediation code.
 - Cloud: Microsoft Azure
 - IaC: Terraform
 - Language: Python 3.10
-- AI: Groq API (LLaMA3-70b)
+- AI: Groq API (LLaMA3-70b-versatile)
 - CI/CD: GitHub Actions
 - Containers: Docker + Docker Compose
 - Monitoring: Prometheus + Grafana
