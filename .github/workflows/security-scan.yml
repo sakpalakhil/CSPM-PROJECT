@@ -3,10 +3,10 @@ name: CSPM Security Scan
 on:
   push:
     paths:
-      - 'terraform/**'
-    schedule:
-    - cron: '0 6 * * *'
-     workflow_dispatch:
+      - 'terraform/**'    # Run when infra changes
+  schedule:
+    - cron: '0 6 * * *'   # Run daily at 6am UTC
+  workflow_dispatch:       # Manual trigger
 
 jobs:
   security-scan:
