@@ -20,6 +20,9 @@ explanations and Terraform remediation code.
 - Containers: Docker + Docker Compose
 - Monitoring: Prometheus + Grafana
 
+<img width="960" height="564" alt="report-sample" src="https://github.com/user-attachments/assets/97b51597-2360-4230-b615-35c2e1928d3a" />
+
+
 ## Quick Start
 ```bash
 git clone https://github.com/sakpalakhil/CSPM-PROJECT
